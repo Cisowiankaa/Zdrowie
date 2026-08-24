@@ -91,6 +91,24 @@ CREATE TABLE IF NOT EXISTS audit_log (
     details TEXT,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS health_measurements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id TEXT NOT NULL,
+    measured_at TEXT NOT NULL,
+    systolic REAL,
+    diastolic REAL,
+    pulse REAL,
+    glucose REAL,
+    glucose_unit TEXT DEFAULT 'mg/dL',
+    weight REAL,
+    temperature REAL,
+    spo2 REAL,
+    symptoms TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 @contextmanager
@@ -170,6 +188,10 @@ def init_domain_db():
         conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_reminders_unique_v6 "
             "ON reminders(record_id, remind_at, reminder_type)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_measurements_profile_time "
+            "ON health_measurements(profile_id, measured_at DESC)"
         )
 
         count = conn.execute("SELECT COUNT(*) FROM profiles").fetchone()[0]
