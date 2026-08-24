@@ -35,23 +35,28 @@ function syncPage(){
   <div class="card"><small>Profile</small><div class="value">${db.profiles?.length||0}</div></div>
   <div class="card"><small>Chmura</small><div class="value" style="font-size:20px">Make + Drive</div><small>konfiguracja</small></div>
  </div>
- <div class="panel"><h3>Połączenie z chmurą</h3><p class="sync-note">Ten test nie wysyła leków, badań ani innych danych zdrowotnych. Wysyła tylko techniczny pakiet testowy, żeby Make rozpoznał strukturę synchronizacji.</p><div class="sync-row"><button id="cloudTest">Połącz chmurę — test</button><span id="cloudStatus" class="sync-status"></span></div></div>
+ <div class="panel"><h3>Połączenie z chmurą</h3><p class="sync-note">Aplikacja wysyła jednorazowy techniczny test do Make. Test nie zawiera leków, badań ani innych danych zdrowotnych.</p><div class="sync-row"><button id="cloudTest">Wyślij test ponownie</button><span id="cloudStatus" class="sync-status">Przygotowanie testu…</span></div></div>
  <div class="panel"><h3>Eksport zaszyfrowanej kopii</h3><p class="sync-note">Ustaw hasło. Bez niego pliku nie da się odczytać.</p><div class="sync-row"><input id="syncPassword" type="password" placeholder="Hasło do kopii"/><button id="syncExport">Eksportuj zaszyfrowany plik</button></div></div>
  <div class="panel"><h3>Import na drugim komputerze</h3><p class="sync-note">Wskaż plik <strong>.zdrowie</strong> i wpisz to samo hasło.</p><div class="sync-row"><input id="syncFile" type="file" accept=".zdrowie,application/json"/><input id="syncImportPassword" type="password" placeholder="Hasło do kopii"/><button id="syncImport">Importuj dane</button></div><div id="syncStatus" class="sync-status"></div></div>
  <div class="panel"><h3>Jak używać na kilku komputerach</h3><ol class="sync-steps"><li>Na komputerze A wyeksportuj zaszyfrowany plik.</li><li>Zapisz go w swoim folderze OneDrive, Google Drive albo Dropbox.</li><li>Na komputerze B otwórz ten sam plik i zaimportuj go do aplikacji.</li><li>Po pełnym uruchomieniu chmury aplikacja będzie mogła wykonywać ten proces automatycznie.</li></ol></div>`;
- document.getElementById('cloudTest').onclick=sendCloudLearningTest;
+ document.getElementById('cloudTest').onclick=()=>sendCloudLearningTest(true);
  document.getElementById('syncExport').onclick=syncExport;
  document.getElementById('syncImport').onclick=syncImport;
+ setTimeout(()=>sendCloudLearningTest(false),250);
 }
-async function sendCloudLearningTest(){
+async function sendCloudLearningTest(force){
  const status=document.getElementById('cloudStatus');
+ if(!status)return;
+ const sentKey='zdrowie-cloud-learning-test-v2';
+ if(!force&&sessionStorage.getItem(sentKey)){status.textContent='Test techniczny został już wysłany w tej sesji.';return;}
  const deviceId=localStorage.getItem('zdrowie-device-id')||('dev-'+crypto.randomUUID());
  localStorage.setItem('zdrowie-device-id',deviceId);
  const payload={action:'learn',format:SYNC_MAGIC,deviceId,updatedAt:new Date().toISOString(),encrypted:'TEST-ENCRYPTED-PAYLOAD'};
  status.textContent='Wysyłanie testu…';
  try{
   await fetch(CLOUD_SYNC_WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify(payload)});
-  status.textContent='Test wysłany. Możesz wrócić do rozmowy i napisać „dalej”.';
+  sessionStorage.setItem(sentKey,'1');
+  status.textContent='Test wysłany do Make.';
  }catch(e){status.textContent='Nie udało się wysłać testu. Sprawdź internet i spróbuj ponownie.';}
 }
 async function syncExport(){
