@@ -1,6 +1,6 @@
 # Zdrowie
 
-Profesjonalna aplikacja desktopowa do zarządzania lekami, wizytami, badaniami, receptami, przypomnieniami, dokumentacją i synchronizacją Slack.
+Profesjonalna aplikacja desktopowa do zarządzania lekami, lekarzami, wizytami, badaniami, receptami, przypomnieniami, dokumentacją i synchronizacją między komputerami.
 
 ## Tryby pracy
 
@@ -8,21 +8,22 @@ Profesjonalna aplikacja desktopowa do zarządzania lekami, wizytami, badaniami, 
 - **ONLINE bez AI** — internet i integracje działają, AI korzysta z lokalnego fallbacku.
 - **OFFLINE** — aplikacja działa na SQLite i lokalnych plikach; synchronizacja uruchamia się po powrocie internetu.
 
-## Moduły
+## Moduły v6
 
 - Dashboard
 - Leki
-- Wizyty
+- Lekarze — specjalizacja, placówka, telefon, e-mail, notatki
+- Wizyty — termin, lekarz, miejsce, notatki i status
 - Badania
-- Recepty
-- Przypomnienia
+- Recepty — lek, kod recepty, ilość, ważność i status realizacji
+- Inteligentne przypomnienia — 24 h i 2 h przed wizytą oraz 3 dni przed końcem ważności recepty
 - Powiadomienia
 - Dokumentacja
-- Synchronizacja Slack
+- Synchronizacja wielokomputerowa i Slack
 - Backup / Restore
 - Asystent AI jako warstwa opcjonalna
 
-## Uruchomienie
+## Uruchomienie v6
 
 ```bash
 python -m venv .venv
@@ -34,14 +35,14 @@ Windows:
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 copy .env.example .env
-python main_window.py
+python main_v6.py
 ```
 
 ## Bezpieczeństwo
 
-Nie commituj `.env`, tokenów Slack ani kluczy API. Dane lokalne (`*.sqlite3`, `documents/`, `backups/`) są wykluczone przez `.gitignore`.
+Nie commituj `.env`, tokenów, kluczy API ani danych medycznych. Dane lokalne (`*.sqlite3`, `documents/`, `backups/`) są wykluczone przez `.gitignore`. Synchronizacja wielokomputerowa korzysta z zaszyfrowanego pliku w folderze współdzielonym.
 
 ## GitHub Actions
 
 - `Python CI` sprawdza składnię i importy.
-- `Build Windows` buduje artefakt aplikacji przez PyInstaller po ręcznym uruchomieniu lub tagu `v*`.
+- `Build Windows` buduje aplikację v6 przez PyInstaller po ręcznym uruchomieniu workflow lub tagu `v*`.
