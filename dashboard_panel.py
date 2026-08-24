@@ -107,9 +107,16 @@ class DashboardPanel(ttk.Frame):
         )
 
     def _query(self, sql, params=()):
-        with sqlite3.connect(DB_PATH) as conn:
-            conn.row_factory = sqlite3.Row
-            return conn.execute(sql, params).fetchall()
+        try:
+            with sqlite3.connect(DB_PATH) as conn:
+                conn.row_factory = sqlite3.Row
+                return conn.execute(sql, params).fetchall()
+        except sqlite3.OperationalError as exc:
+            # Optional/integration tables may be unavailable during migration
+            # or on an interrupted first start. Dashboard must stay usable.
+            if "no such table" in str(exc).lower():
+                return []
+            raise
 
     def _query_one(self, sql, params=()):
         rows = self._query(sql, params)

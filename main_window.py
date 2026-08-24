@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import ttk
 
 from runtime_mode import detect_runtime_mode
+from db import init_db
+from domain_db import init_domain_db
 from desktop_sync_panel import SlackSyncPanel
 from dashboard_panel import DashboardPanel
 from crud_modules import CrudModulePanel
@@ -27,6 +29,12 @@ NAV = [
 
 class MainWindow(tk.Tk):
     def __init__(self):
+        # Create/migrate core tables before any panel queries the database.
+        # This is essential for a fresh Windows EXE installation where the
+        # SQLite file may not exist yet.
+        init_db()
+        init_domain_db()
+
         super().__init__()
         self.title("Zdrowie")
         self.geometry("1440x900")

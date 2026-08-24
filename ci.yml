@@ -35,3 +35,6 @@ jobs:
           import backup_service
           print("Smoke import OK")
           PY
+
+      - name: Fresh database regression test
+        run: python -m unittest -v test_fresh_database.py
