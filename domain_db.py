@@ -5,28 +5,28 @@ from contextlib import contextmanager
 DB_PATH = os.getenv("ZDROWIE_DB_PATH", "zdrowie.sqlite3")
 
 DOMAIN_SCHEMA = """
+CREATE TABLE IF NOT EXISTS profiles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    relation TEXT,
+    birth_date TEXT,
+    notes TEXT,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
 CREATE TABLE IF NOT EXISTS medications (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'to_buy',
     purchased_at TEXT,
-    updated_at TEXT NOT NULL,
-    dose_text TEXT,
-    times_per_day INTEGER DEFAULT 1,
-    stock_qty REAL DEFAULT 0,
-    low_stock_threshold REAL DEFAULT 5,
-    unit TEXT DEFAULT 'szt.',
-    notes TEXT
-);
-
-CREATE TABLE IF NOT EXISTS medication_intake (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    medication_id TEXT NOT NULL,
-    scheduled_for TEXT,
-    taken_at TEXT,
-    status TEXT NOT NULL DEFAULT 'taken',
-    dose_text TEXT,
-    created_at TEXT NOT NULL
+    updated_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS doctors (
@@ -108,31 +108,47 @@ def init_domain_db():
         for definition in ("doctor_id TEXT", "location TEXT", "notes TEXT"):
             _add_column(conn, "appointments", definition)
 
-        for definition in (
-            "medication_name TEXT",
-            "prescription_code TEXT",
-            "quantity TEXT",
-            "notes TEXT",
-        ):
+        for definition in ("medication_name TEXT", "prescription_code TEXT", "quantity TEXT", "notes TEXT"):
             _add_column(conn, "prescriptions", definition)
 
+        _add_column(conn, "reminders", "reminder_type TEXT DEFAULT 'manual'")
+
         for definition in (
-            "dose_text TEXT",
-            "times_per_day INTEGER DEFAULT 1",
-            "stock_qty REAL DEFAULT 0",
-            "low_stock_threshold REAL DEFAULT 5",
-            "unit TEXT DEFAULT 'szt.'",
-            "notes TEXT",
+            "dose_text TEXT", "times_per_day INTEGER DEFAULT 1", "stock_qty REAL DEFAULT 0",
+            "low_stock_threshold REAL DEFAULT 5", "unit TEXT DEFAULT 'szt.'", "notes TEXT"
         ):
             _add_column(conn, "medications", definition)
 
-        _add_column(conn, "reminders", "reminder_type TEXT DEFAULT 'manual'")
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS medication_intake (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                medication_id TEXT NOT NULL,
+                scheduled_for TEXT,
+                taken_at TEXT,
+                status TEXT NOT NULL,
+                dose_text TEXT,
+                created_at TEXT NOT NULL,
+                profile_id TEXT
+            )
+        """)
+
+        for table in ("medications", "doctors", "appointments", "tests", "prescriptions", "reminders"):
+            _add_column(conn, table, "profile_id TEXT")
+        _add_column(conn, "medication_intake", "profile_id TEXT")
 
         conn.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_reminders_unique_v6 "
             "ON reminders(record_id, remind_at, reminder_type)"
         )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_medication_intake_medication_date "
-            "ON medication_intake(medication_id, scheduled_for, taken_at)"
-        )
+
+        count = conn.execute("SELECT COUNT(*) FROM profiles").fetchone()[0]
+        if count == 0:
+            conn.execute(
+                "INSERT INTO profiles(id,name,relation,is_default,created_at,updated_at) VALUES('PROFILE-ME','Mój profil','Ja',1,datetime('now'),datetime('now'))"
+            )
+        conn.execute("INSERT OR IGNORE INTO app_settings(key,value) VALUES('active_profile_id','PROFILE-ME')")
+
+        active = conn.execute("SELECT value FROM app_settings WHERE key='active_profile_id'").fetchone()
+        active_id = active[0] if active and active[0] else "PROFILE-ME"
+        for table in ("medications", "doctors", "appointments", "tests", "prescriptions", "reminders", "medication_intake"):
+            conn.execute(f"UPDATE {table} SET profile_id=? WHERE profile_id IS NULL OR profile_id=''", (active_id,))
