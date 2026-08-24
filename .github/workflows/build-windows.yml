@@ -30,13 +30,27 @@ jobs:
           }
           pip install pyinstaller
 
-      - name: Build EXE
+      - name: Build application
         shell: pwsh
         run: |
           pyinstaller --noconfirm --windowed --name Zdrowie main_v7.py
 
-      - name: Upload artifact
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+
+      - name: Upload portable application
         uses: actions/upload-artifact@v4
         with:
-          name: Zdrowie-Windows
+          name: Zdrowie-Windows-Portable
           path: dist/Zdrowie/
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zdrowie-Windows-Setup
+          path: installer_output/*.exe
