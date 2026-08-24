@@ -13,11 +13,25 @@ CREATE TABLE IF NOT EXISTS medications (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS doctors (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    specialty TEXT,
+    facility TEXT,
+    phone TEXT,
+    email TEXT,
+    notes TEXT,
+    updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS appointments (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'planned',
     scheduled_at TEXT,
+    doctor_id TEXT,
+    location TEXT,
+    notes TEXT,
     updated_at TEXT NOT NULL
 );
 
@@ -34,6 +48,10 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     title TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
     valid_until TEXT,
+    medication_name TEXT,
+    prescription_code TEXT,
+    quantity TEXT,
+    notes TEXT,
     updated_at TEXT NOT NULL
 );
 
@@ -41,9 +59,11 @@ CREATE TABLE IF NOT EXISTS reminders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     record_id TEXT NOT NULL,
     remind_at TEXT NOT NULL,
-    source TEXT NOT NULL DEFAULT 'slack',
+    source TEXT NOT NULL DEFAULT 'local',
     status TEXT NOT NULL DEFAULT 'scheduled',
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    reminder_type TEXT DEFAULT 'manual',
+    UNIQUE(record_id, remind_at, reminder_type)
 );
 """
 
@@ -57,6 +77,33 @@ def domain_db():
     finally:
         conn.close()
 
+def _columns(conn, table):
+    return {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+def _add_column(conn, table, definition):
+    name = definition.split()[0]
+    if name not in _columns(conn, table):
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {definition}")
+
 def init_domain_db():
     with domain_db() as conn:
         conn.executescript(DOMAIN_SCHEMA)
+
+        # Safe migrations for databases created by earlier releases.
+        for definition in ("doctor_id TEXT", "location TEXT", "notes TEXT"):
+            _add_column(conn, "appointments", definition)
+
+        for definition in (
+            "medication_name TEXT",
+            "prescription_code TEXT",
+            "quantity TEXT",
+            "notes TEXT",
+        ):
+            _add_column(conn, "prescriptions", definition)
+
+        _add_column(conn, "reminders", "reminder_type TEXT DEFAULT 'manual'")
+
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_reminders_unique_v6 "
+            "ON reminders(record_id, remind_at, reminder_type)"
+        )
