@@ -33,7 +33,7 @@ jobs:
       - name: Build application
         shell: pwsh
         run: |
-          pyinstaller --noconfirm --windowed --name Zdrowie main_v12.py
+          pyinstaller --noconfirm --windowed --name Zdrowie main_v13.py
 
       - name: Install Inno Setup
         shell: pwsh
