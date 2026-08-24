@@ -1,0 +1,13 @@
+# Dodaj do main_window.py:
+#
+# from backup_panel import BackupPanel
+#
+# NAV:
+# ("backup", "Backup"),
+#
+# titles:
+# "backup": ("Backup", "Kopie zapasowe i przywracanie danych."),
+#
+# show_section:
+# elif key == "backup":
+#     BackupPanel(self.body).pack(fill="both", expand=True)

@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Local secrets
+.env
+*.key
+*.pem
+*.p12
+
+# Runtime data
+zdrowie.sqlite3
+*.sqlite
+*.sqlite3
+documents/
+backups/
+logs/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Builds
+build/
+dist/
+*.spec

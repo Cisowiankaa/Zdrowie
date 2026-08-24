@@ -1,0 +1,8 @@
+# Zastąp obsługę modułów w main_window.py tym fragmentem:
+#
+# from crud_modules import CrudModulePanel
+#
+# if key in ("medications", "appointments", "tests", "prescriptions"):
+#     panel = CrudModulePanel(self.body, key)
+#     panel.pack(fill="both", expand=True)
+#     return

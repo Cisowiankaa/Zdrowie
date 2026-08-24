@@ -1,0 +1,13 @@
+# Do main_window.py dodaj:
+#
+# from notification_center import NotificationCenterPanel
+#
+# Do NAV:
+# ("notifications", "Powiadomienia"),
+#
+# Do titles:
+# "notifications": ("Powiadomienia", "Alerty o wizytach, badaniach, receptach i przypomnieniach."),
+#
+# Do show_section:
+# elif key == "notifications":
+#     NotificationCenterPanel(self.body).pack(fill="both", expand=True)

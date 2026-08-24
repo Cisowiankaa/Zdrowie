@@ -1,0 +1,11 @@
+# Integracja z DashboardPanel:
+# w main_window.py dodaj:
+#
+# from dashboard_panel import DashboardPanel
+#
+# a w show_section:
+#
+# if key == "dashboard":
+#     panel = DashboardPanel(self.body)
+#     panel.pack(fill="both", expand=True)
+#     return
