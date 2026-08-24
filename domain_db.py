@@ -81,6 +81,16 @@ CREATE TABLE IF NOT EXISTS reminders (
     reminder_type TEXT DEFAULT 'manual',
     UNIQUE(record_id, remind_at, reminder_type)
 );
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id TEXT,
+    entity_type TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    details TEXT,
+    created_at TEXT NOT NULL
+);
 """
 
 @contextmanager
@@ -119,6 +129,11 @@ def init_domain_db():
         ):
             _add_column(conn, "medications", definition)
 
+        for definition in (
+            "result_text TEXT", "reference_range TEXT", "performed_at TEXT", "facility TEXT", "notes TEXT"
+        ):
+            _add_column(conn, "tests", definition)
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS medication_intake (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -131,6 +146,22 @@ def init_domain_db():
                 profile_id TEXT
             )
         """)
+
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS documents (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL,
+                file_path TEXT,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                profile_id TEXT,
+                linked_test_id TEXT
+            )
+        """)
+        _add_column(conn, "documents", "profile_id TEXT")
+        _add_column(conn, "documents", "linked_test_id TEXT")
 
         for table in ("medications", "doctors", "appointments", "tests", "prescriptions", "reminders"):
             _add_column(conn, table, "profile_id TEXT")
@@ -150,5 +181,5 @@ def init_domain_db():
 
         active = conn.execute("SELECT value FROM app_settings WHERE key='active_profile_id'").fetchone()
         active_id = active[0] if active and active[0] else "PROFILE-ME"
-        for table in ("medications", "doctors", "appointments", "tests", "prescriptions", "reminders", "medication_intake"):
+        for table in ("medications", "doctors", "appointments", "tests", "prescriptions", "reminders", "medication_intake", "documents"):
             conn.execute(f"UPDATE {table} SET profile_id=? WHERE profile_id IS NULL OR profile_id=''", (active_id,))
